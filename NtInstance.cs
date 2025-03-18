@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MinimalNtCore
@@ -29,6 +30,44 @@ namespace MinimalNtCore
         public void SetTeamNumber(int teamNumber, int port = NtCoreNatives.NT_DEFAULT_PORT4)
         {
             NtCoreNatives.NT_SetServerTeam(handle, (uint)teamNumber, (uint)port);
+        }
+
+        public void SetAddresses((string addr, int port)[] addressesAndPorts)
+        {
+            WpiString[] addresses = new WpiString[addressesAndPorts.Length];
+            uint[] ports = new uint[addressesAndPorts.Length];
+
+            try
+            {
+                for (int i = 0; i < addressesAndPorts.Length; i++)
+                {
+                    ports[i] = (uint)addressesAndPorts[i].port;
+                    int byteCount = Encoding.UTF8.GetByteCount(addressesAndPorts[i].addr);
+                    addresses[i].str = (byte*)Marshal.AllocHGlobal(byteCount);
+                    addresses[i].len = (UIntPtr)byteCount;
+                    fixed (char* c = addressesAndPorts[i].addr)
+                    {
+                        Encoding.UTF8.GetBytes(c, addressesAndPorts[i].addr.Length, addresses[i].str, byteCount);
+                    }
+                }
+                fixed (WpiString* addrs = addresses)
+                {
+                    fixed (uint* ps = ports)
+                    {
+                        NtCoreNatives.NT_SetServerMulti(handle, (UIntPtr)addressesAndPorts.Length, addrs, ps);
+                    }
+                }
+            }
+            finally
+            {
+                for (int i = 0; i < addresses.Length; i++)
+                {
+                    if (addresses[i].str != null)
+                    {
+                        Marshal.FreeHGlobal((IntPtr)addresses[i].str);
+                    }
+                }
+            }
         }
 
         public bool IsConnected()
@@ -233,5 +272,12 @@ namespace MinimalNtCore
             }
             return new FloatArraySubscriber(subHandle);
         }
+
+        public PolledLogger CreateLogger(int minLevel, int maxLevel) {
+            var poller = NtCoreNatives.NT_CreateListenerPoller(handle);
+            NtCoreNatives.NT_AddPolledLogger(poller, (uint)minLevel, (uint)maxLevel);
+            return new PolledLogger(poller);
+        }
     }
+
 }

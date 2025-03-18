@@ -11,6 +11,165 @@ namespace MinimalNtCore
         public UIntPtr len;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct NativeNtLogMessage
+    {
+        public uint level;
+        public WpiString filename;
+        public uint line;
+        public WpiString message;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeTimeSyncEventData
+    {
+        public long serverTimeOffset;
+        public long rtt2;
+        public int valid;
+    }
+
+     [StructLayout(LayoutKind.Sequential)]
+    public struct NativeNetworkTableValue
+    {
+        public NtType type;
+        public long lastChange;
+        public long serverTime;
+
+        public NtValueUnion data;
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct NtValueUnion
+        {
+            [FieldOffset(0)]
+            public int valueBoolean;
+
+            [FieldOffset(0)]
+            public long valueInt;
+
+            [FieldOffset(0)]
+            public float valueFloat;
+
+            [FieldOffset(0)]
+            public double valueDouble;
+
+            [FieldOffset(0)]
+            public WpiString valueString;
+
+            [FieldOffset(0)]
+            public NtValueRaw valueRaw;
+
+            [FieldOffset(0)]
+            public NtValueBooleanArray arrBoolean;
+
+            [FieldOffset(0)]
+            public NtValueDoubleArray arrDouble;
+
+            [FieldOffset(0)]
+            public NtValueFloatArray arrFloat;
+
+            [FieldOffset(0)]
+            public NtValueIntArray arrInt;
+
+            [FieldOffset(0)]
+            public NtValueStringArray arrString;
+
+            public unsafe struct NtValueRaw
+            {
+                public byte* data;
+                public UIntPtr size;
+            }
+
+            public unsafe struct NtValueBooleanArray
+            {
+                public int* arr;
+                public UIntPtr size;
+            }
+
+            public unsafe struct NtValueDoubleArray
+            {
+                public double* arr;
+
+                public UIntPtr size;
+            }
+
+            public unsafe struct NtValueFloatArray
+            {
+                public float* arr;
+
+                public UIntPtr size;
+            }
+
+            public unsafe struct NtValueIntArray
+            {
+                public long* arr;
+
+                public UIntPtr size;
+            }
+
+            public unsafe struct NtValueStringArray
+            {
+                public WpiString* arr;
+                public UIntPtr size;
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeValueEventData
+    {
+        public int topic;
+        public int subentry;
+        public NativeNetworkTableValue value;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeTopicInfo
+    {
+        public int topic;
+        public WpiString name;
+        public NtType type;
+        public WpiString typeStr;
+        public WpiString properties;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct NativeConnectionInfo
+    {
+        public WpiString remoteId;
+        public WpiString remoteIp;
+        public uint remotePort;
+        public ulong lastUpdate;
+        public uint protocolVersion;
+    }
+
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct NativeNtEvent
+    {
+        public uint listenerHandle;
+        public uint flags;
+        public NtEventUnion data;
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct NtEventUnion
+        {
+            [FieldOffset(0)]
+            public NativeConnectionInfo connInfo;
+
+            [FieldOffset(0)]
+            public NativeTopicInfo topicInfo;
+
+            [FieldOffset(0)]
+            public NativeValueEventData valueData;
+
+            [FieldOffset(0)]
+            public NativeNtLogMessage logMessage;
+
+            [FieldOffset(0)]
+            public NativeTimeSyncEventData timeSyncData;
+        }
+    }
+
     public enum NtType
     {
         NT_UNASSIGNED = 0,
@@ -154,5 +313,26 @@ namespace MinimalNtCore
 
         [DllImport(NT_LIBRARY)]
         public static extern uint NT_Publish(uint topic, NtType type, WpiString* typeStr, NativePubSubOptions* options);
+
+        [DllImport(NT_LIBRARY)]
+        public static extern void NT_SetServerMulti(uint inst, UIntPtr count,
+                       WpiString* server_names,
+                       uint* ports);
+
+        [DllImport(NT_LIBRARY)]
+        public static extern uint NT_CreateListenerPoller(uint inst);
+
+        [DllImport(NT_LIBRARY)]
+        public static extern void NT_DestroyListenerPoller(uint poller);
+
+        [DllImport(NT_LIBRARY)]
+        public static extern NativeNtEvent* NT_ReadListenerQueue(uint poller, UIntPtr* len);
+
+        [DllImport(NT_LIBRARY)]
+        public static extern uint NT_AddPolledLogger(uint poller, uint minLevel, uint maxLevel);
+
+        [DllImport(NT_LIBRARY)]
+        public static extern void NT_DisposeEventArray(NativeNtEvent* arr, UIntPtr count);
+
     }
 }
