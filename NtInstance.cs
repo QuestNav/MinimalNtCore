@@ -273,7 +273,7 @@ namespace MinimalNtCore
             return new FloatArraySubscriber(subHandle);
         }
 
-        public PolledLogger CreateLogger(int minLevel, int maxLevel) {
+        public PolledLogger CreateLogger(LogLevel minLevel, LogLevel maxLevel) {
             var poller = NtCoreNatives.NT_CreateListenerPoller(handle);
             NtCoreNatives.NT_AddPolledLogger(poller, (uint)minLevel, (uint)maxLevel);
             return new PolledLogger(poller);
