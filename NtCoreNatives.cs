@@ -1,9 +1,20 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace MinimalNtCore
 {
+    public enum LogLevel {
+        Critical = 50,
+        Error = 40,
+        Warning = 30,
+        Info = 20,
+        Debug = 10,
+        Debug1 = 9,
+        Debug2 = 8,
+        Debug3 = 7,
+        Debug4 = 6
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct WpiString
     {
